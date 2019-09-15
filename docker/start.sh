@@ -9,7 +9,7 @@ cd $workdir
 docker build -t $project .
 docker run\
  -dit\
- -e SOME_ENV_VAR='iUnej0aUoJLR7K4n0vRF'\
+ -e SOME_ENV_VAR='SOME_VAR'\
  -p 6553:6553\
  -v $workdir:/home/$project\
  --name $project\
