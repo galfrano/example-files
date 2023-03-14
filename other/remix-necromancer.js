@@ -1,8 +1,7 @@
-
 const model = {
-  name: "MenuCategory",
+  name: "CheckItem",
   id: "id",
-  columns: ["category", "type"]
+  columns: ["createdAt", "price", "menuItemId"]
 };
 
 const camel = (str) => str.charAt(0).toLowerCase() + str.slice(1);
@@ -18,7 +17,7 @@ const splitWords = (str) => {
   return words;
 }
 
-const dashed = splitWords(model.name).map(word => word.toLowerCase).join('-')
+const dashed = splitWords(model.name).map(word => word.toLowerCase()).join('-')
 
 const simplePlural = (str) => str.charAt(str.length-1) == 'y' ? str.slice(0, str.length-2)+'ies' : str+'s'
 
@@ -48,7 +47,6 @@ export function get${model.name}({ ${model.id} } : Pick<${model.name}, "${model.
 export function get${simplePlural(model.name)}() {
   return prisma.${camelName}.findMany({
     select: { ${selectColumns} },
-    //orderBy: { type: "desc" },
   });
 }
 
@@ -68,7 +66,6 @@ export function delete${model.name}({ ${model.id} } : Pick<${model.name}, "${mod
 
 ----------------------------------------------------------------------------------------------------
 $id
-
 ----------------------------------------------------------------------------------------------------
 
 
@@ -97,7 +94,7 @@ export async function action({ request, params }: ActionArgs) {
 
   await delete${model.name}({ id: params.${camelName}Id });
 
-  return redirect("/${dashed}");
+  return redirect("/${simplePlural(dashed)}");
 }
 
 export default function ${model.name}DetailsPage() {
@@ -106,7 +103,7 @@ export default function ${model.name}DetailsPage() {
   return (
     <div>
       <h3 className="text-2xl font-bold">{${camelName}.${model.columns[0]}}</h3>
-      ${model.columns.reduce((acc, curr, i) => acc += i != 0 ? `      <p className="py-6">{${camelName}.${curr}}</p>\n` : '')}
+      ${model.columns.reduce((acc, curr, i) => acc += i != 0 ? `      <p className="py-6">{${camelName}.${curr}}</p>\n` : '', '')}
       <hr className="my-4" />
       <Form method="post">
         <button
@@ -161,7 +158,7 @@ import { json, redirect } from "@remix-run/node";
 import { Form, useActionData } from "@remix-run/react";
 import * as React from "react";
 // import { MenuCategoryType } from "@prisma/client";
-import { create${model.name} } from "~/models/${dashed}server";
+import { create${model.name} } from "~/models/${dashed}.server";
 import { requireUserId } from "~/session.server";
 
 export async function action({ request }: ActionArgs) {
@@ -169,23 +166,23 @@ export async function action({ request }: ActionArgs) {
   // TODO: security
   const formData = await request.formData();
   
-${model.columns.reduce((acc, curr) =>{
+${model.columns.reduce((acc, curr) =>
   acc += `  const ${curr} = formData.get("${curr}");
   if (typeof ${curr} !== "string" || ${curr}.length === 0) {
     return json(
-      { errors: { ${curr}: "${capitalize(curr)} is required", ${curr}: null } },
+      { errors: { ${curr}: "${capitalize(curr)} is required" } },
       { status: 400 }
     );
-  }\n`})}
+  }\n`, '')}
 
   const new${model.name} = await create${model.name}({ ${model.columns.join(', ')} });
 
-  return redirect(\`/${dashed}/\${new${model.name}.id}\`);
+  return redirect(\`/${simplePlural(dashed)}/\${new${model.name}.id}\`);
 }
 
 export default function New${model.name}Page() {
   const actionData = useActionData<typeof action>();
-${model.columns.reduce((acc, curr) => acc += `  const ${curr}Ref = React.useRef<HTMLInputElement>(null);\n`)}
+${model.columns.reduce((acc, curr) => acc += `  const ${curr}Ref = React.useRef<HTMLInputElement>(null);\n`, '')}
 
 
   React.useEffect(() => {
@@ -222,7 +219,7 @@ ${model.columns.reduce((acc, curr) => acc += `      <div>
             {actionData.errors.${curr}}
           </div>
         )}
-      </div>\n`)}
+      </div>\n`, '')}
 
 
       <div className="text-right">
@@ -244,13 +241,13 @@ import type { LoaderArgs } from "@remix-run/node";
 import { json } from "@remix-run/node";
 import { Form, Link, NavLink, Outlet, useLoaderData } from "@remix-run/react";
 
-import { get${simplePlural(model.name)}} from "~/models/${dashed}.server";
+import { get${simplePlural(model.name)} } from "~/models/${dashed}.server";
 import { requireUserId } from "~/session.server";
 import { useUser } from "~/utils";
 
 export async function loader({ request }: LoaderArgs) {
   const userId = await requireUserId(request);
-  // TODO: user seggregation
+  // TODO: user segregation
   const list = await get${simplePlural(model.name)}();
   return json({ list });
 }
